@@ -5,12 +5,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
+	"os"
 	"strings"
 )
 
 const updateMrUrl = "https://gitlab.com/api/v4/projects/%d/merge_requests/%d"
 const getApprovalRulesForMrUrl = "https://gitlab.com/api/v4/projects/%d/merge_requests/%d/approval_rules"
+const getAllProjectMrUrl = "https://gitlab.com/api/v4/merge_requests?scope=all&state=opened&source_branch=%s"
 
 func ParseMergeRequestAction(r *http.Request) (*GitlabMergeRequestAction, error) {
 	b, err := io.ReadAll(r.Body)
@@ -44,9 +47,8 @@ func setMrReviewers(projectID int, mrIID int, token string, reviewerIds []int) e
 
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := http.DefaultClient.Do(req)
+	_, err = http.DefaultClient.Do(req)
 	if err != nil {
-		fmt.Println(resp.StatusCode)
 		return err
 	}
 
@@ -54,6 +56,7 @@ func setMrReviewers(projectID int, mrIID int, token string, reviewerIds []int) e
 }
 
 func getApproversIdsForMr(projectID int, mrIID int, token string) ([]int, error) {
+	log.SetOutput(os.Stdout)
 	url := fmt.Sprintf(getApprovalRulesForMrUrl,
 		projectID,
 		mrIID,
@@ -75,14 +78,14 @@ func getApproversIdsForMr(projectID int, mrIID int, token string) ([]int, error)
 
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
-		fmt.Println("Error reading response body:", err)
+		log.Println("Error reading response body:", err)
 		return nil, err
 	}
 
 	var approvalRules []Rule
 	err = json.Unmarshal(body, &approvalRules)
 	if err != nil || approvalRules == nil {
-		fmt.Println("Error parsing JSON:", err)
+		log.Println("Error parsing JSON:", err)
 		return nil, err
 	}
 
@@ -97,6 +100,57 @@ func getApproversIdsForMr(projectID int, mrIID int, token string) ([]int, error)
 	}
 
 	return approversIds, nil
+}
+
+func getAllProjectMrBySourceName(sourceBranch string, token string) ([]GitlabMergeRequest, error) {
+	log.SetOutput(os.Stdout)
+	url := fmt.Sprintf(getAllProjectMrUrl,
+		sourceBranch,
+	)
+
+	req, err := generateRequestWithTokenHeader(http.MethodGet, url, token, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	defer func(Body io.ReadCloser) {
+		_ = Body.Close()
+	}(response.Body)
+
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		log.Println("Error reading response body:", err)
+		return nil, err
+	}
+
+	var mrs []GitlabMergeRequest
+	err = json.Unmarshal(body, &mrs)
+	if err != nil {
+		log.Println("Error parsing JSON:", err)
+		return nil, err
+	}
+
+	return mrs, nil
+}
+
+func isMrHasRelatedNotApproved(currentIId int, mrSourceBranch string, token string) bool {
+	mrs, err := getAllProjectMrBySourceName(mrSourceBranch, token)
+	if len(mrs) == 0 || err != nil {
+		return false
+	}
+
+	for _, mr := range mrs {
+		if mr.DetailedMergeStatus == "not_approved" && mr.IID != currentIId {
+			return true
+		}
+	}
+
+	return false
 }
 
 func generateRequestWithTokenHeader(method string, url string, token string, body io.Reader) (*http.Request, error) {

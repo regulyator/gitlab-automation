@@ -1,5 +1,15 @@
 package gitlab
 
+type GitlabMergeRequest struct {
+	ID                  int    `json:"id"`
+	IID                 int    `json:"iid"`
+	Title               string `json:"title"`
+	Description         string `json:"description"`
+	State               string `json:"state"`
+	MergeStatus         string `json:"merge_status"`
+	DetailedMergeStatus string `json:"detailed_merge_status"`
+}
+
 type GitlabMergeRequestAction struct {
 	ObjectKind       string     `json:"object_kind"`
 	EventType        string     `json:"event_type"`
