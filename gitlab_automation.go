@@ -2,6 +2,7 @@ package main
 
 import (
 	"gitlab-automation/gitlab"
+	"log"
 	"net/http"
 	"os"
 )
@@ -12,6 +13,7 @@ var YouTrackToken string
 var YouTrackBasePath string
 
 func main() {
+	log.SetOutput(os.Stdout)
 	GitLabToken = os.Getenv("GITLAB_TOKEN")
 	YouTrackToken = os.Getenv("YOU_TRACK_TOKEN")
 	YouTrackBasePath = os.Getenv("YOU_TRACK_BASE_PATH")
@@ -19,6 +21,7 @@ func main() {
 	if len(GitLabToken) == 0 || len(YouTrackToken) == 0 || len(YouTrackBasePath) == 0 {
 		panic("some variables not has been set!")
 	}
+	log.Println("...start listening for hooks:)")
 	handler := http.HandlerFunc(handleRequest)
 	http.Handle("/", handler)
 	if err := http.ListenAndServe(":3000", nil); err != nil {
