@@ -3,11 +3,15 @@ package gitlab
 import (
 	"fmt"
 	"gitlab-automation/youtrack"
+	"log"
+	"os"
 	"regexp"
 )
 
 func ProcessMergeRequestAction(mrAction *GitlabMergeRequestAction, gitlabToken string, youTrackToken string, youTrackBasePath string) {
+	log.SetOutput(os.Stdout)
 	if isMrAcceptable(mrAction) {
+		log.Printf("process incoming event %s for action %s\n", mrAction.EventType, mrAction.ObjectAttributes.Action)
 		switch mrActionStatus := mrAction.ObjectAttributes.Action; mrActionStatus {
 		case "open", "reopen", "update":
 			if len(mrAction.ObjectAttributes.ReviewerIDs) == 0 {

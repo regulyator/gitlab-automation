@@ -16,6 +16,8 @@ const getApprovalRulesForMrUrl = "https://gitlab.com/api/v4/projects/%d/merge_re
 const getAllProjectMrUrl = "https://gitlab.com/api/v4/merge_requests?scope=all&state=opened&source_branch=%s"
 
 func ParseMergeRequestAction(r *http.Request) (*GitlabMergeRequestAction, error) {
+	log.SetOutput(os.Stdout)
+	log.Println("try parse incoming body...")
 	b, err := io.ReadAll(r.Body)
 	defer func(Body io.ReadCloser) {
 		_ = Body.Close()
@@ -24,6 +26,8 @@ func ParseMergeRequestAction(r *http.Request) (*GitlabMergeRequestAction, error)
 	var mrAction GitlabMergeRequestAction
 	err = json.Unmarshal(b, &mrAction)
 	if err != nil {
+		log.Println("error when parse incoming body:(...")
+		log.Println(err)
 		return nil, err
 	}
 
