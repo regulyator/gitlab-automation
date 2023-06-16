@@ -23,7 +23,7 @@ func main() {
 	}
 	log.Println("...start listening for hooks:)")
 	handler := http.HandlerFunc(handleRequest)
-	http.Handle("/", handler)
+	http.Handle("/asdasd", handler)
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		panic(err)
 	}
