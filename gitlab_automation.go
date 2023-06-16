@@ -24,7 +24,7 @@ func main() {
 	log.Println("...start listening for hooks:)")
 	handler := http.HandlerFunc(handleRequest)
 	http.Handle("/", handler)
-	if err := http.ListenAndServe(":3000", nil); err != nil {
+	if err := http.ListenAndServe(":8080", nil); err != nil {
 		panic(err)
 	}
 }
