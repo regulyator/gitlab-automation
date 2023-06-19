@@ -32,7 +32,7 @@ func main() {
 func handleRequest(w http.ResponseWriter, r *http.Request) {
 	log.SetOutput(os.Stdout)
 	w.WriteHeader(http.StatusOK)
-	if r.Header["X-Gitlab-Token"][0] == GitLabHeaderSecret {
+	if len(r.Header["X-Gitlab-Token"]) == 0 || r.Header["X-Gitlab-Token"][0] == GitLabHeaderSecret {
 		log.Println("process incoming request...")
 		if result, err := gitlab.ParseMergeRequestAction(r); err == nil {
 			go gitlab.ProcessMergeRequestAction(result, GitLabToken, YouTrackToken, YouTrackBasePath)
